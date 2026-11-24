@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#dedde7"/>
+  <path d="M90 180L620 90l90 350-530 90z" fill="#3d3656"/>
+  <path d="M120 205L605 120l72 295-485 78z" fill="#f8f5ec"/>
+  <path d="M170 250l110-15 20 105-110 15z" fill="#e45a2b"/>
+  <text x="400" y="275" text-anchor="middle" font-family="Arial" font-size="42" font-weight="900" fill="#3d3656" transform="rotate(-8 400 275)">MAKE YOUR MARK</text>
+  <text x="400" y="330" text-anchor="middle" font-family="Arial" font-size="22" letter-spacing="5" fill="#666b63" transform="rotate(-8 400 330)">PRECISION CUT</text>
+  <circle cx="565" cy="410" r="28" fill="none" stroke="#e45a2b" stroke-width="8"/>
+</svg>

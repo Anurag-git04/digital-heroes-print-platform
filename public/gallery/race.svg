@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#f4d7c9"/>
+  <path d="M0 470L800 250v350H0z" fill="#d45b36"/>
+  <rect x="170" y="65" width="460" height="430" rx="18" fill="#f8f5ec" stroke="#171916" stroke-width="5" transform="rotate(-3 400 280)"/>
+  <text x="400" y="150" text-anchor="middle" font-family="Arial" font-size="26" font-weight="700" letter-spacing="8" fill="#171916" transform="rotate(-3 400 280)">DIGITAL HEROES</text>
+  <text x="400" y="355" text-anchor="middle" font-family="Arial" font-size="210" font-weight="900" fill="#e45a2b" transform="rotate(-3 400 280)">027</text>
+  <text x="400" y="425" text-anchor="middle" font-family="Arial" font-size="34" font-weight="700" fill="#171916" transform="rotate(-3 400 280)">ALEX MORGAN</text>
+</svg>

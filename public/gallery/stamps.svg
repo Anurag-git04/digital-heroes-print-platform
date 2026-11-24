@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#eadfce"/>
+  <rect x="110" y="360" width="580" height="120" rx="18" fill="#8a5d36" transform="rotate(-4 400 420)"/>
+  <path d="M280 150h240v190H280z" fill="#59452e" transform="rotate(-4 400 245)"/>
+  <path d="M335 80h130c35 0 55 30 45 65l-25 85H315l-25-85c-10-35 10-65 45-65z" fill="#b8824e"/>
+  <rect x="140" y="105" width="520" height="320" rx="12" fill="#f8f5ec" stroke="#59452e" stroke-width="4" transform="rotate(4 400 265)"/>
+  <circle cx="400" cy="245" r="82" fill="none" stroke="#e45a2b" stroke-width="10"/>
+  <text x="400" y="235" text-anchor="middle" font-family="Arial" font-size="30" font-weight="900" fill="#59452e">APPROVED</text>
+  <text x="400" y="278" text-anchor="middle" font-family="Arial" font-size="18" font-weight="700" letter-spacing="3" fill="#59452e">DIGITAL HEROES</text>
+</svg>

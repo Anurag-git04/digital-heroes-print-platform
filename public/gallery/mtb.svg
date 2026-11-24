@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#dce2ee"/>
+  <path d="M0 420L250 210l170 130 180-190 200 170v280H0z" fill="#aebdd4"/>
+  <g transform="rotate(4 400 300)">
+    <rect x="110" y="110" width="580" height="360" rx="28" fill="#253653"/>
+    <rect x="135" y="135" width="530" height="310" rx="16" fill="#f8f5ec"/>
+    <text x="400" y="210" text-anchor="middle" font-family="Arial" font-size="28" font-weight="700" letter-spacing="6" fill="#253653">RACE NUMBER</text>
+    <text x="400" y="385" text-anchor="middle" font-family="Arial" font-size="180" font-weight="900" fill="#e45a2b">17</text>
+    <text x="400" y="425" text-anchor="middle" font-family="Arial" font-size="24" font-weight="700" fill="#253653">BUILT FOR THE TRAIL</text>
+  </g>
+</svg>
