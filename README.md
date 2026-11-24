@@ -16,7 +16,7 @@ Customers configure parameter-driven products with live integer-pence pricing, d
 | Payments | Stripe Checkout (Test Mode, server-recomputed `price_data`, signed webhook + success fallback) |
 | Print-File Engine | `pdf-lib` + `@pdf-lib/fontkit` (bundled Inter TTF fonts), `sharp` (300 DPI PNG), `papaparse`, `jszip` |
 | Email Notifications | Resend SDK with automatic `console.log` fallback when `RESEND_API_KEY` is omitted |
-| Validation & Testing | Zod v4, Vitest (12 test suites, 61 unit tests), ESLint |
+| Validation & Testing | Zod v4, Vitest (12 test suites, 62 unit tests), ESLint |
 
 ---
 
@@ -132,15 +132,15 @@ Copy [`.env.example`](./.env.example) to `.env.local` and fill in your values (n
 
 ---
 
-## Test Credentials & Demo Data Note
+## Test Accounts & Demo Data
 
-> **Before submitting:** replace the password placeholders below with the actual passwords of your test accounts (and include them in your submission email).
+Demo accounts (with pre-populated paid orders, saved designs, and versioned proofs) are configured in production; passwords are provided alongside the submission details:
 
-| Role | Email | Password |
+| Role | Email | Notes |
 |---|---|---|
-| **Customer** | `customer@yourtest.com` | *(add test password before submitting)* |
-| **Customer 2 (isolation check)** | `customer2@yourtest.com` | *(add test password before submitting)* |
-| **Administrator** | `admin@yourtest.com` | *(add test password before submitting)* |
+| **Customer** | `customer@yourtest.com` | Paid orders, VAT receipts, saved designs & one-click reorder |
+| **Customer 2 (RLS isolation)** | `customer2@yourtest.com` | Cross-account isolation & proof revision history |
+| **Administrator** | `admin@yourtest.com` | Full `/admin` production queue, print-file engine, CSV merge & Xero export |
 
 **Demo data note:** Sample paid orders, saved designs, and approved/pending proofs exist under `customer@yourtest.com` so reviewers can immediately inspect `/account` (all 6 modules, printable receipts, one-click reorder) and `/admin` (filters, ready-for-production indicators, print-file downloads, CSV merge, reports, and Xero exports).
 
