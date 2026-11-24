@@ -1,5 +1,6 @@
 import sharp from "sharp";
 import type { DesignDocument, DesignElement } from "@/lib/designer/model";
+import { escapeXml, renderTextAsSvgPaths } from "@/lib/print/svg-text";
 
 /** Pixels rendered per millimetre for proof previews (screen proofs, not print files). */
 const PROOF_PX_PER_MM = 8;
@@ -10,44 +11,26 @@ export type ProofSvgOptions = {
   images: ReadonlyMap<string, string>;
 };
 
-function escapeXml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
 function px(valueMm: number) {
   return Math.round(valueMm * PROOF_PX_PER_MM * 1000) / 1000;
 }
 
-function safeFontFamily(value: string) {
-  const cleaned = value.replace(/[^A-Za-z0-9 ,-]/g, "").trim();
-  return `${cleaned || "Inter"}, Arial, sans-serif`;
-}
-
 function renderText(element: Extract<DesignElement, { kind: "text" | "placeholder" }>) {
-  const lines = (element.text || " ").split("\n");
-  const fontPx = px(element.fontSizeMm);
-  const lineHeight = fontPx * 1.2;
-  const cx = px(element.xMm);
-  const cy = px(element.yMm);
-  const top = cy - (lines.length * lineHeight) / 2;
-  const tspans = lines
-    .map((line, index) => {
-      const baseline = top + index * lineHeight + fontPx * 0.95;
-      return `<tspan x="${cx}" y="${baseline}">${escapeXml(line) || " "}</tspan>`;
-    })
-    .join("");
-
-  return (
-    `<g transform="rotate(${element.rotation} ${cx} ${cy})" opacity="${element.opacity}">` +
-    `<text text-anchor="middle" font-family="${escapeXml(safeFontFamily(element.fontFamily))}" ` +
-    `font-size="${fontPx}" font-weight="${element.fontWeight}" fill="${element.fill}" ` +
-    `letter-spacing="${px(element.trackingMm)}">${tspans}</text></g>`
-  );
+  const scaleX = element.scaleX || 1;
+  const scaleY = element.scaleY || 1;
+  return renderTextAsSvgPaths({
+    text: element.text || " ",
+    cx: px(element.xMm),
+    cy: px(element.yMm),
+    boxWidthPx: px(element.widthMm),
+    textAlign: element.textAlign ?? "left",
+    fontSizePx: px(element.fontSizeMm * scaleY),
+    fontWeight: element.fontWeight,
+    fill: element.fill,
+    opacity: element.opacity,
+    rotation: element.rotation,
+    trackingPx: px(element.trackingMm * scaleX),
+  });
 }
 
 function renderImage(
@@ -69,15 +52,23 @@ function renderImage(
     );
   }
 
-  const label = escapeXml(element.label ?? "Artwork placeholder");
+  const label = element.label ?? "Artwork placeholder";
   return (
     `<g transform="rotate(${element.rotation} ${cx} ${cy})">` +
     `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="#efede7" stroke="#9a958b" stroke-width="3" stroke-dasharray="14 8"/>` +
-    `<text x="${cx}" y="${cy}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${Math.max(12, Math.min(width, height) / 8)}" fill="#565149">${label}</text></g>`
+    renderTextAsSvgPaths({
+      text: label,
+      cx,
+      cy,
+      fontSizePx: Math.max(12, Math.min(width, height) / 8),
+      fontWeight: "400",
+      fill: "#565149",
+    }) +
+    `</g>`
   );
 }
 
-/** Pure: builds the proof SVG from design JSON. Exported for unit tests. */
+/** Pure: builds the proof SVG from design JSON using bundled Inter vector paths. */
 export function buildProofSvg(design: DesignDocument, options: ProofSvgOptions) {
   const width = px(design.widthMm);
   const height = px(design.heightMm);
@@ -92,7 +83,17 @@ export function buildProofSvg(design: DesignDocument, options: ProofSvgOptions) 
     `<rect width="${width}" height="${height}" fill="#ffffff"/>` +
     body +
     `<rect x="${px(area.x)}" y="${px(area.y)}" width="${px(area.w)}" height="${px(area.h)}" fill="none" stroke="#c4411a" stroke-width="2" stroke-dasharray="12 8"/>` +
-    `<text x="${width / 2}" y="${height / 2}" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="${watermarkSize}" fill="#000000" fill-opacity="0.07" transform="rotate(-20 ${width / 2} ${height / 2})">PROOF v${options.version}</text>` +
+    renderTextAsSvgPaths({
+      text: `PROOF v${options.version}`,
+      cx: width / 2,
+      cy: height / 2,
+      fontSizePx: watermarkSize,
+      fontWeight: "700",
+      fill: "#000000",
+      fillOpacity: 0.08,
+      rotation: -20,
+    }) +
+    `<!-- ${escapeXml(`v${options.version}`)} -->` +
     `</svg>`
   );
 }

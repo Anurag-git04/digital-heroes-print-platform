@@ -43,6 +43,7 @@ async function run(
     const message = await work(orderId.data, user.id, formData);
     revalidatePath(`/account/orders/${orderId.data}/proof`);
     revalidatePath("/account");
+    revalidatePath("/admin");
     return { message };
   } catch (error) {
     if (error instanceof ProofError) {

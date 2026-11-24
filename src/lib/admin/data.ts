@@ -110,7 +110,7 @@ export async function loadAdminDashboard(filters: AdminJobFilters = {}): Promise
       .order("created_at", { ascending: true }),
     admin
       .from("proofs")
-      .select("id, order_id, version, status")
+      .select("id, order_id, version, status, note")
       .order("version", { ascending: false }),
     admin
       .from("files")
@@ -147,11 +147,11 @@ export async function loadAdminDashboard(filters: AdminJobFilters = {}): Promise
 
   const proofsByOrder = new Map<
     string,
-    Array<{ id: string; version: number; status: ProofStatus }>
+    Array<{ id: string; version: number; status: ProofStatus; note: string | null }>
   >();
   for (const p of proofRows ?? []) {
     const list = proofsByOrder.get(p.order_id) ?? [];
-    list.push({ id: p.id, version: p.version, status: p.status as ProofStatus });
+    list.push({ id: p.id, version: p.version, status: p.status as ProofStatus, note: p.note ?? null });
     proofsByOrder.set(p.order_id, list);
   }
 
@@ -205,7 +205,9 @@ export async function loadAdminDashboard(filters: AdminJobFilters = {}): Promise
       configSummary: item
         ? summarizeConfig(item.config, productMeta?.materials ?? new Map(), item.quantity)
         : "No line items",
-      latestProof: latest ? { version: latest.version, status: latest.status } : null,
+      latestProof: latest
+        ? { version: latest.version, status: latest.status, note: latest.note }
+        : null,
       readyForProduction: isLatestProofApproved(orderProofs),
       files: filesByOrder.get(order.id) ?? [],
     };

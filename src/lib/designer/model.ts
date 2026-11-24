@@ -22,6 +22,8 @@ export type DesignElementBase = {
   opacity: number;
 };
 
+export type TextAlign = "left" | "center" | "right";
+
 export type DesignTextElement = DesignElementBase & {
   kind: "text" | "placeholder";
   text: string;
@@ -29,6 +31,7 @@ export type DesignTextElement = DesignElementBase & {
   fontSizeMm: number;
   fontWeight: "400" | "700";
   fill: string;
+  textAlign?: TextAlign;
   trackingMm: number;
   placeholderId?: string;
   minFontMm?: number;

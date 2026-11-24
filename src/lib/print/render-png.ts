@@ -4,6 +4,7 @@ import sharp from "sharp";
 import type { DesignDocument, DesignImageElement, DesignTextElement } from "@/lib/designer/model";
 import { fitTextToBox, mmToPt, mmToPx, ptToMm } from "./fitting";
 import { loadBundledFonts } from "./fonts";
+import { renderTextAsSvgPaths } from "./svg-text";
 
 export type RenderPngOptions = {
   bleedMm: number;
@@ -11,20 +12,6 @@ export type RenderPngOptions = {
   /** imagePath -> raw PNG bytes for renderable artwork. */
   images: ReadonlyMap<string, Uint8Array>;
 };
-
-function escapeXml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-function safeFontFamily(value: string) {
-  const cleaned = value.replace(/[^A-Za-z0-9 ,-]/g, "").trim();
-  return `${cleaned || "Inter"}, Arial, sans-serif`;
-}
 
 function px(valueMm: number, dpi: number) {
   return Math.round(((valueMm * dpi) / 25.4) * 1000) / 1000;
@@ -37,25 +24,19 @@ function renderTextSvg(
   fontSizeMm: number,
   trackingMm: number,
 ) {
-  const lines = (element.text || " ").split(/\r?\n/);
-  const fontPx = px(fontSizeMm, dpi);
-  const lineHeight = fontPx * 1.2;
-  const cx = px(element.xMm + bleedMm, dpi);
-  const cy = px(element.yMm + bleedMm, dpi);
-  const top = cy - (lines.length * lineHeight) / 2;
-  const tspans = lines
-    .map((line, index) => {
-      const baseline = top + index * lineHeight + fontPx * 0.95;
-      return `<tspan x="${cx}" y="${baseline}">${escapeXml(line) || " "}</tspan>`;
-    })
-    .join("");
-
-  return (
-    `<g transform="rotate(${element.rotation} ${cx} ${cy})" opacity="${element.opacity}">` +
-    `<text text-anchor="middle" font-family="${escapeXml(safeFontFamily(element.fontFamily))}" ` +
-    `font-size="${fontPx}" font-weight="${element.fontWeight}" fill="${element.fill}" ` +
-    `letter-spacing="${px(trackingMm, dpi)}">${tspans}</text></g>`
-  );
+  return renderTextAsSvgPaths({
+    text: element.text || " ",
+    cx: px(element.xMm + bleedMm, dpi),
+    cy: px(element.yMm + bleedMm, dpi),
+    boxWidthPx: px(element.widthMm, dpi),
+    textAlign: element.textAlign ?? "left",
+    fontSizePx: px(fontSizeMm, dpi),
+    fontWeight: element.fontWeight,
+    fill: element.fill,
+    opacity: element.opacity,
+    rotation: element.rotation,
+    trackingPx: px(trackingMm, dpi),
+  });
 }
 
 function renderImageSvg(
@@ -80,17 +61,25 @@ function renderImageSvg(
     );
   }
 
-  const label = escapeXml(element.label ?? "Artwork file attached");
+  const label = element.label ?? "Artwork file attached";
   return (
     `<g transform="rotate(${element.rotation} ${cx} ${cy})">` +
     `<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="#efede7" stroke="#9a958b" stroke-width="4" stroke-dasharray="18 10"/>` +
-    `<text x="${cx}" y="${cy}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${Math.max(18, Math.min(width, height) / 8)}" fill="#565149">${label}</text></g>`
+    renderTextAsSvgPaths({
+      text: label,
+      cx,
+      cy,
+      fontSizePx: Math.max(18, Math.min(width, height) / 8),
+      fontWeight: "400",
+      fill: "#565149",
+    }) +
+    `</g>`
   );
 }
 
 /**
  * Renders a production-resolution PNG (e.g. 300 DPI) with bleed and DPI metadata,
- * using the same font-metric shrink-to-fit sizing as renderPrintPdf.
+ * using bundled Inter vector paths and the same font-metric shrink-to-fit sizing as renderPrintPdf.
  */
 export async function renderPrintPng(
   design: DesignDocument,
@@ -117,13 +106,16 @@ export async function renderPrintPng(
       }
 
       const font = element.fontWeight === "700" ? boldFont : regularFont;
+      const scaleX = element.scaleX || 1;
+      const scaleY = element.scaleY || 1;
+      const scaledFontSizeMm = element.fontSizeMm * scaleY;
       const fit = fitTextToBox(element.text, font, {
-        requestedSizePt: mmToPt(element.fontSizeMm),
-        minSizePt: mmToPt(element.minFontMm ?? Math.min(element.fontSizeMm, 2)),
-        maxSizePt: mmToPt(element.maxFontMm ?? Math.max(element.fontSizeMm, 2)),
+        requestedSizePt: mmToPt(scaledFontSizeMm),
+        minSizePt: mmToPt(element.minFontMm ?? Math.min(scaledFontSizeMm, 2)),
+        maxSizePt: mmToPt(Math.max(element.maxFontMm ?? scaledFontSizeMm, scaledFontSizeMm)),
         maxWidthPt: mmToPt(element.fitWidthMm ?? element.widthMm),
         maxHeightPt: mmToPt(element.fitHeightMm ?? element.heightMm),
-        baseTrackingPt: mmToPt(element.trackingMm ?? 0),
+        baseTrackingPt: mmToPt((element.trackingMm ?? 0) * scaleX),
       });
 
       return renderTextSvg(element, bleedMm, dpi, ptToMm(fit.fontSizePt), ptToMm(fit.trackingPt));

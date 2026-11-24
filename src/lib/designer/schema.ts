@@ -20,6 +20,7 @@ const textElementSchema = baseElementSchema.extend({
   fontSizeMm: z.number().finite().positive().max(200),
   fontWeight: z.enum(["400", "700"]),
   fill: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  textAlign: z.enum(["left", "center", "right"]).optional(),
   trackingMm: z.number().finite().min(0).max(20).default(0),
   placeholderId: z.string().min(1).max(100).optional(),
   minFontMm: z.number().finite().positive().max(200).optional(),

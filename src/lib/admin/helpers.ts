@@ -46,6 +46,7 @@ export type AdminJob = {
   latestProof: {
     version: number;
     status: ProofStatus;
+    note?: string | null;
   } | null;
   readyForProduction: boolean;
   files: AdminFileItem[];

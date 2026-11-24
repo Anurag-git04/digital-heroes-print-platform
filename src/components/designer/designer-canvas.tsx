@@ -15,6 +15,7 @@ import {
   type DesignImageElement,
   type DesignTextElement,
   type PrintArea,
+  type TextAlign,
 } from "@/lib/designer/model";
 import { parseDesignDocument } from "@/lib/designer/schema";
 
@@ -49,7 +50,12 @@ type SelectionState = {
   fontFamily: string;
   fontSizeMm: number;
   fill: string;
+  textAlign: TextAlign;
 };
+
+function normalizeTextAlign(value?: string): TextAlign {
+  return value === "center" || value === "right" ? value : "left";
+}
 
 type ObjectSnapshot = {
   left: number;
@@ -173,6 +179,7 @@ function serializeObject(object: FabricObject): DesignElement | null {
       fontSizeMm: (object.fontSize ?? 16) / PIXELS_PER_MM,
       fontWeight: object.fontWeight === 700 || object.fontWeight === "700" ? "700" : "400",
       fill: typeof object.fill === "string" ? object.fill : "#111111",
+      textAlign: normalizeTextAlign(object.textAlign),
       trackingMm: (object.charSpacing ?? 0) / PIXELS_PER_MM,
       placeholderId: meta.placeholderId,
       minFontMm: meta.minFontMm,
@@ -257,6 +264,7 @@ function createPlaceholder(
     fontFamily: "Arial",
     fontWeight: "700",
     fill: "#111111",
+    textAlign: "center",
     charSpacing: (placeholder.tracking_mm ?? 0) * PIXELS_PER_MM,
     originX: "center",
     originY: "center",
@@ -336,6 +344,7 @@ export function DesignerCanvas({
         fontFamily: object.fontFamily,
         fontSizeMm: object.fontSize / PIXELS_PER_MM,
         fill: typeof object.fill === "string" ? object.fill : "#111111",
+        textAlign: normalizeTextAlign(object.textAlign),
       });
     } else {
       setSelection(null);
@@ -516,6 +525,7 @@ export function DesignerCanvas({
           fontFamily: saved.fontFamily,
           fontWeight: saved.fontWeight,
           fill: saved.fill,
+          textAlign: saved.textAlign ?? "left",
           charSpacing: saved.trackingMm * PIXELS_PER_MM,
           scaleX: saved.scaleX,
           scaleY: saved.scaleY,
@@ -599,6 +609,7 @@ export function DesignerCanvas({
       fontSize: 8 * PIXELS_PER_MM,
       fontFamily: "Arial",
       fill: "#111111",
+      textAlign: "center",
       originX: "center",
       originY: "center",
       splitByGrapheme: false,
@@ -622,7 +633,7 @@ export function DesignerCanvas({
   };
 
   const updateSelectedText = (
-    patch: { text?: string; fontFamily?: string; fontSizeMm?: number; fill?: string },
+    patch: { text?: string; fontFamily?: string; fontSizeMm?: number; fill?: string; textAlign?: TextAlign },
     refit = false,
   ) => {
     const canvas = canvasRef.current;
@@ -635,6 +646,7 @@ export function DesignerCanvas({
       ...(patch.fontFamily !== undefined ? { fontFamily: patch.fontFamily } : {}),
       ...(patch.fontSizeMm !== undefined ? { fontSize: patch.fontSizeMm * PIXELS_PER_MM } : {}),
       ...(patch.fill !== undefined ? { fill: patch.fill } : {}),
+      ...(patch.textAlign !== undefined ? { textAlign: patch.textAlign } : {}),
     });
     if (refit) fitTextObject(object);
     object.setCoords();
@@ -885,6 +897,26 @@ export function DesignerCanvas({
                     className="mt-1 h-11 w-full cursor-pointer rounded-xl border border-[var(--line)] bg-white p-1"
                   />
                 </label>
+              </div>
+              <div className="text-sm">
+                <span className="mb-2 block text-[var(--muted)]">Alignment</span>
+                <div className="grid grid-cols-3 gap-1.5" role="group" aria-label="Text alignment">
+                  {(["left", "center", "right"] as const).map((align) => (
+                    <button
+                      key={align}
+                      type="button"
+                      onClick={() => updateSelectedText({ textAlign: align })}
+                      aria-pressed={selection.textAlign === align}
+                      className={`rounded-xl border px-3 py-2 text-xs font-semibold capitalize transition ${
+                        selection.textAlign === align
+                          ? "border-[var(--ink)] bg-[var(--ink)] text-white"
+                          : "border-[var(--line)] bg-white text-[var(--ink)] hover:border-[var(--ink)]"
+                      }`}
+                    >
+                      {align}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (

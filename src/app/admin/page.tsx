@@ -282,6 +282,12 @@ async function AdminContent({ searchParams }: { searchParams: AdminSearchParams 
                       </span>{" "}
                       · Created {formatDate(job.createdAt)}
                     </p>
+                    {job.latestProof?.status === "changes_requested" && job.latestProof.note && (
+                      <p className="mt-2.5 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-900">
+                        <span className="font-semibold">Customer change note (v{job.latestProof.version}):</span>{" "}
+                        {job.latestProof.note}
+                      </p>
+                    )}
                   </div>
 
                   <div className="text-left sm:text-right">

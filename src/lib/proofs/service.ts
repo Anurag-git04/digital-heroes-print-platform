@@ -256,15 +256,20 @@ export async function approveLatestProof(orderId: string, userId: string) {
     throw new Error("The approval could not be logged.");
   }
 
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("email")
-    .eq("id", userId)
-    .maybeSingle();
+  const [{ data: profile }, { data: admins }] = await Promise.all([
+    admin.from("profiles").select("email").eq("id", userId).maybeSingle(),
+    admin.from("profiles").select("email").eq("role", "admin"),
+  ]);
 
-  if (profile?.email) {
+  const recipients = new Set<string>();
+  if (profile?.email) recipients.add(profile.email);
+  for (const a of admins ?? []) {
+    if (a.email) recipients.add(a.email);
+  }
+
+  for (const to of recipients) {
     await sendProofStatusEmail({
-      to: profile.email,
+      to,
       orderReference: orderId.slice(0, 8).toUpperCase(),
       version: proof.version,
       action: "approved",
@@ -308,18 +313,24 @@ export async function requestProofChanges(orderId: string, userId: string, note:
     await walkOrderStatus(admin, orderId, "proof", ["artwork"], userId);
   }
 
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("email")
-    .eq("id", userId)
-    .maybeSingle();
+  const [{ data: profile }, { data: admins }] = await Promise.all([
+    admin.from("profiles").select("email").eq("id", userId).maybeSingle(),
+    admin.from("profiles").select("email").eq("role", "admin"),
+  ]);
 
-  if (profile?.email) {
+  const recipients = new Set<string>();
+  if (profile?.email) recipients.add(profile.email);
+  for (const a of admins ?? []) {
+    if (a.email) recipients.add(a.email);
+  }
+
+  for (const to of recipients) {
     await sendProofStatusEmail({
-      to: profile.email,
+      to,
       orderReference: orderId.slice(0, 8).toUpperCase(),
       version: proof.version,
       action: "changes_requested",
+      note,
     });
   }
 

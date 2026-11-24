@@ -86,14 +86,18 @@ export async function sendProofStatusEmail(params: {
   orderReference: string;
   version: number;
   action: "approved" | "changes_requested";
+  note?: string;
 }) {
   const label = params.action === "approved" ? "approved" : "changes requested";
   const subject = `Proof v${params.version} ${label} — Order ${params.orderReference}`;
-  const text = [
+  const lines = [
     `Hello,`,
     ``,
     `Proof v${params.version} for order ${params.orderReference} has been marked as: ${label}.`,
-  ].join("\n");
+  ];
+  if (params.note) {
+    lines.push(``, `Customer note: ${params.note}`);
+  }
 
-  return sendEmail({ to: params.to, subject, text });
+  return sendEmail({ to: params.to, subject, text: lines.join("\n") });
 }

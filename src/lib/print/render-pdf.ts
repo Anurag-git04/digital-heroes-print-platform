@@ -78,12 +78,15 @@ function drawTextElement(
   bleedMm: number,
   pageHeightPt: number,
 ) {
-  const requestedSizePt = mmToPt(element.fontSizeMm);
-  const minSizePt = mmToPt(element.minFontMm ?? Math.min(element.fontSizeMm, 2));
-  const maxSizePt = mmToPt(element.maxFontMm ?? Math.max(element.fontSizeMm, 2));
+  const scaleX = element.scaleX || 1;
+  const scaleY = element.scaleY || 1;
+  const scaledFontSizeMm = element.fontSizeMm * scaleY;
+  const requestedSizePt = mmToPt(scaledFontSizeMm);
+  const minSizePt = mmToPt(element.minFontMm ?? Math.min(scaledFontSizeMm, 2));
+  const maxSizePt = mmToPt(Math.max(element.maxFontMm ?? scaledFontSizeMm, scaledFontSizeMm));
   const maxWidthPt = mmToPt(element.fitWidthMm ?? element.widthMm);
   const maxHeightPt = mmToPt(element.fitHeightMm ?? element.heightMm);
-  const baseTrackingPt = mmToPt(element.trackingMm ?? 0);
+  const baseTrackingPt = mmToPt((element.trackingMm ?? 0) * scaleX);
 
   const fit = fitTextToBox(element.text, font, {
     requestedSizePt,
@@ -99,6 +102,8 @@ function drawTextElement(
   const totalHeightPt = lines.length * lineHeightPt;
   const cx = mmToPt(element.xMm + bleedMm);
   const cy = pageHeightPt - mmToPt(element.yMm + bleedMm);
+  const boxWidthPt = mmToPt(element.widthMm);
+  const align = element.textAlign ?? "left";
   const pdfAngle = -(element.rotation || 0);
   const color = parseHexColor(element.fill);
   const opacity = element.opacity ?? 1;
@@ -108,9 +113,14 @@ function drawTextElement(
     const lineWidth = measureLineWidthPt(trimmedLine, font, fit.fontSizePt, fit.trackingPt);
     // Vertical offset from centre (top line is highest y in PDF coords).
     const dy = totalHeightPt / 2 - (index + 0.85) * lineHeightPt;
+    const dx =
+      align === "left"
+        ? -boxWidthPt / 2
+        : align === "right"
+          ? boxWidthPt / 2 - lineWidth
+          : -lineWidth / 2;
 
     if (Math.abs(fit.trackingPt) < 0.001) {
-      const dx = -lineWidth / 2;
       const pos = rotateAround(cx, cy, dx, dy, pdfAngle);
       page.drawText(trimmedLine, {
         x: pos.x,
@@ -125,7 +135,7 @@ function drawTextElement(
     }
 
     // Draw character-by-character when horizontal tracking is applied.
-    let cursorX = -lineWidth / 2;
+    let cursorX = dx;
     for (const ch of trimmedLine) {
       const pos = rotateAround(cx, cy, cursorX, dy, pdfAngle);
       page.drawText(ch, {
