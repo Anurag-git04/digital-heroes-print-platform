@@ -134,6 +134,8 @@ export async function saveDesign(formData: FormData): Promise<SaveDesignResult> 
     }
 
     revalidatePath("/account");
+    // Proof pages show whether a revision is ready to submit, based on this design's updated_at.
+    revalidatePath("/account/orders/[id]/proof", "page");
     return { designId: values.designId };
   }
 

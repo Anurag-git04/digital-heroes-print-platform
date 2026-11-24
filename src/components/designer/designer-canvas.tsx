@@ -26,6 +26,8 @@ export type DesignerCanvasProps = {
   initialDesignId?: string;
   canPersist: boolean;
   loginHref: string;
+  /** When editing a design for a proof revision, link back to that proof page after saving. */
+  returnHref?: string;
 };
 
 type ObjectMetadata = {
@@ -291,6 +293,7 @@ export function DesignerCanvas({
   initialDesignId,
   canPersist,
   loginHref,
+  returnHref,
 }: DesignerCanvasProps) {
   const canvasElementRef = useRef<HTMLCanvasElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -808,9 +811,13 @@ export function DesignerCanvas({
       }
       setSavedDesignId(result.designId);
       setDirty(false);
-      setSaveMessage("Design saved to your account.");
+      setSaveMessage(returnHref ? "Design saved. Now submit the revision on your proof page." : "Design saved to your account.");
       if (result.designId) {
-        window.history.replaceState(null, "", `/design/${product.slug}?design=${result.designId}`);
+        const query = new URLSearchParams({
+          design: result.designId,
+          ...(returnHref ? { returnTo: returnHref } : {}),
+        });
+        window.history.replaceState(null, "", `/design/${product.slug}?${query}`);
       }
     });
   };
@@ -989,7 +996,14 @@ export function DesignerCanvas({
         {saveMessage && (
           <p role="status" className="mt-3 flex flex-wrap items-center gap-3 text-sm font-medium">
             <span>{saveMessage}</span>
-            {savedDesignId && (
+            {savedDesignId && returnHref && !dirty ? (
+              <Link
+                href={returnHref}
+                className="rounded-full bg-[var(--accent)] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[var(--accent-dark)]"
+              >
+                Back to proof → Submit revision
+              </Link>
+            ) : savedDesignId && (
               <Link href="/account#designs-heading" className="text-[var(--accent)] underline underline-offset-4">
                 View saved designs in Account →
               </Link>
@@ -997,11 +1011,56 @@ export function DesignerCanvas({
           </p>
         )}
         <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white/70 p-4">
-          <p className="text-sm text-[var(--muted)]">{dirty ? "Save your latest changes before checkout." : canCheckout ? "Your saved design is ready for checkout." : "Save the design to attach it to your order."}</p>
-          {canCheckout ? (
-            <Link href={`/checkout?${checkoutQuery}`} className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-dark)]">Continue to checkout</Link>
+          {returnHref ? (
+            <>
+              <p className="text-sm text-[var(--muted)]">
+                {dirty
+                  ? "Save your updated design before returning to your proof."
+                  : "Design saved — return to your proof to generate the revised version."}
+              </p>
+              {!dirty && savedDesignId ? (
+                <Link
+                  href={returnHref}
+                  className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-dark)]"
+                >
+                  Back to proof → Submit revision
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white opacity-40"
+                >
+                  Back to proof → Submit revision
+                </button>
+              )}
+            </>
           ) : (
-            <button type="button" disabled className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white opacity-40">Continue to checkout</button>
+            <>
+              <p className="text-sm text-[var(--muted)]">
+                {dirty
+                  ? "Save your latest changes before checkout."
+                  : canCheckout
+                    ? "Your saved design is ready for checkout."
+                    : "Save the design to attach it to your order."}
+              </p>
+              {canCheckout ? (
+                <Link
+                  href={`/checkout?${checkoutQuery}`}
+                  className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[var(--accent-dark)]"
+                >
+                  Continue to checkout
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className="rounded-full bg-[var(--accent)] px-5 py-2.5 text-sm font-semibold text-white opacity-40"
+                >
+                  Continue to checkout
+                </button>
+              )}
+            </>
           )}
         </div>
       </section>

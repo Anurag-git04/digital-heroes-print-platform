@@ -77,10 +77,23 @@ async function ProofContent({ orderId }: { orderId: string }) {
   const urls = await signProofImages(proofs.flatMap((proof) => (proof.image_path ? [proof.image_path] : [])));
 
   let editHref: string | null = null;
+  let revisionReady = false;
 
   if (item?.design_id && item.product_id) {
-    const { data: product } = await supabase.from("products").select("slug").eq("id", item.product_id).maybeSingle();
-    editHref = product?.slug ? `/design/${product.slug}?design=${item.design_id}` : null;
+    const [{ data: product }, { data: design }] = await Promise.all([
+      supabase.from("products").select("slug").eq("id", item.product_id).maybeSingle(),
+      supabase.from("designs").select("updated_at").eq("id", item.design_id).maybeSingle(),
+    ]);
+    editHref = product?.slug
+      ? `/design/${product.slug}?${new URLSearchParams({
+          design: item.design_id,
+          returnTo: `/account/orders/${orderId}/proof`,
+        })}`
+      : null;
+    // Same rule the server enforces in createProofVersion: the design must be saved after the latest proof.
+    revisionReady = Boolean(
+      design?.updated_at && latest && new Date(design.updated_at) > new Date(latest.created_at),
+    );
   }
 
   const latestUrl = latest?.image_path ? urls.get(latest.image_path) : undefined;
@@ -139,7 +152,13 @@ async function ProofContent({ orderId }: { orderId: string }) {
 
         <aside className="space-y-8">
           <section className="rounded-2xl border border-[var(--line)] bg-white p-6">
-            <ProofActions orderId={order.id} stage={stage} editHref={editHref} />
+            <ProofActions
+              orderId={order.id}
+              stage={stage}
+              editHref={editHref}
+              revisionReady={revisionReady}
+              nextVersion={(latest?.version ?? 0) + 1}
+            />
           </section>
 
           {proofs.length > 0 && (

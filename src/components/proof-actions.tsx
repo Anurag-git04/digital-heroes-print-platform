@@ -14,6 +14,9 @@ type ProofActionsProps = {
   orderId: string;
   stage: ProofStage;
   editHref: string | null;
+  /** True once the design has been saved after the latest proof (revision can be submitted). */
+  revisionReady?: boolean;
+  nextVersion?: number;
 };
 
 const primaryButton =
@@ -41,13 +44,13 @@ function Feedback({ state }: { state: ProofActionState }) {
   return null;
 }
 
-function GenerateForm({ orderId, label }: { orderId: string; label: string }) {
+function GenerateForm({ orderId, label, disabled = false }: { orderId: string; label: string; disabled?: boolean }) {
   const [state, action, pending] = useActionState<ProofActionState, FormData>(generateProofAction, {});
 
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="orderId" value={orderId} />
-      <button type="submit" disabled={pending} className={primaryButton}>
+      <button type="submit" disabled={pending || disabled} className={primaryButton}>
         {pending ? "Preparing proof…" : label}
       </button>
       <Feedback state={state} />
@@ -100,7 +103,7 @@ function ReviewForms({ orderId }: { orderId: string }) {
   );
 }
 
-export function ProofActions({ orderId, stage, editHref }: ProofActionsProps) {
+export function ProofActions({ orderId, stage, editHref, revisionReady = false, nextVersion }: ProofActionsProps) {
   if (stage === "create_first") {
     return <GenerateForm orderId={orderId} label="Generate my proof" />;
   }
@@ -110,17 +113,35 @@ export function ProofActions({ orderId, stage, editHref }: ProofActionsProps) {
   }
 
   if (stage === "needs_revision") {
+    const versionLabel = nextVersion ? `v${nextVersion}` : "the new version";
     return (
       <div className="space-y-5">
-        <p className="text-sm leading-6 text-[var(--muted)]">
-          Edit your design with your notes in mind, save it, then come back and submit the revision.
-        </p>
+        {revisionReady ? (
+          <p role="status" className="rounded-xl bg-green-50 px-4 py-3 text-sm leading-6 text-green-800">
+            <span className="font-semibold">Design saved.</span> Submit the revision to create proof {versionLabel}.
+            The preview on the left updates once the new version is generated.
+          </p>
+        ) : (
+          <ol className="list-decimal space-y-1 pl-5 text-sm leading-6 text-[var(--muted)]">
+            <li>
+              <span className="font-semibold text-[var(--ink)]">Edit my design</span> and click{" "}
+              <span className="font-semibold text-[var(--ink)]">Save design</span>.
+            </li>
+            <li>
+              Come back here and <span className="font-semibold text-[var(--ink)]">Submit revision</span> to create
+              proof {versionLabel}.
+            </li>
+          </ol>
+        )}
         {editHref && (
           <Link href={editHref} className={`${secondaryButton} inline-block`}>
-            Edit my design
+            {revisionReady ? "Edit again" : "Edit my design"}
           </Link>
         )}
-        <GenerateForm orderId={orderId} label="Submit revision" />
+        <GenerateForm orderId={orderId} label="Submit revision" disabled={!revisionReady} />
+        {!revisionReady && (
+          <p className="text-xs text-[var(--muted)]">Submit revision unlocks after you save your edited design.</p>
+        )}
       </div>
     );
   }

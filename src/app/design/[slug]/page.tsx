@@ -26,13 +26,20 @@ async function DesignContent({ slug, searchParams }: { slug: string; searchParam
 
   const params = await searchParams;
   const designId = single(params.design);
+  const rawReturnTo = single(params.returnTo);
+  // Only allow returning to a customer's own proof page (prevents open redirects).
+  const returnHref =
+    rawReturnTo && /^\/account\/orders\/[0-9a-f-]{36}\/proof$/i.test(rawReturnTo) ? rawReturnTo : undefined;
   const user = await getCurrentUser();
   let initialDesign: DesignDocument | null = null;
   let initialDesignId: string | undefined;
   let savedConfiguration: ConfigurationInput | undefined;
 
   if (designId) {
-    const currentPath = `/design/${slug}?${new URLSearchParams({ design: designId })}`;
+    const currentPath = `/design/${slug}?${new URLSearchParams({
+      design: designId,
+      ...(returnHref ? { returnTo: returnHref } : {}),
+    })}`;
     if (!user) redirect(`/login?next=${encodeURIComponent(currentPath)}`);
     if (!hasSupabaseConfig() || !process.env.SUPABASE_SERVICE_ROLE_KEY) notFound();
 
@@ -77,7 +84,12 @@ async function DesignContent({ slug, searchParams }: { slug: string; searchParam
     <>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-5">
         <div>
-          <Link href={`/products/${product.division.slug}/${product.slug}`} className="text-sm font-semibold text-[var(--accent)]">← Back to configurator</Link>
+          <Link
+            href={returnHref ?? `/products/${product.division.slug}/${product.slug}`}
+            className="text-sm font-semibold text-[var(--accent)]"
+          >
+            {returnHref ? "← Back to proof" : "← Back to configurator"}
+          </Link>
           <p className="mt-6 text-xs font-semibold uppercase tracking-[0.22em] text-[var(--accent)]">{product.division.name}</p>
           <h1 className="mt-2 text-4xl font-semibold tracking-[-0.04em] sm:text-5xl">Design your {product.name.toLowerCase()}.</h1>
           <p className="mt-4 max-w-2xl leading-7 text-[var(--muted)]">Place text and artwork inside the print area. Long template fields shrink automatically, and every saved element stays in millimetres.</p>
@@ -96,6 +108,7 @@ async function DesignContent({ slug, searchParams }: { slug: string; searchParam
         initialDesignId={initialDesignId}
         canPersist={canPersist}
         loginHref={loginHref}
+        returnHref={returnHref}
       />
     </>
   );
